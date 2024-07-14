@@ -1,3 +1,5 @@
+
+int trace(unsigned int n);
 // Saved registers for kernel context switches.
 struct context {
   uint64 ra;
@@ -94,6 +96,9 @@ struct proc {
 
   // wait_lock must be held when using this:
   struct proc *parent;         // Parent process
+
+  //trace masks
+  unsigned int trace_mask;
 
   // these are private to the process, so p->lock need not be held.
   uint64 kstack;               // Virtual address of kernel stack

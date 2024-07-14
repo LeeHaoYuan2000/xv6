@@ -89,3 +89,11 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+//return 1 means set task mask success
+uint64 sys_trace(void){
+  int n;
+  argint(0, &n);
+  printf("trace bit is %d\n", n);
+  return trace(n);
+}

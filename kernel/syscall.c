@@ -7,6 +7,8 @@
 #include "syscall.h"
 #include "defs.h"
 
+void sys_trace_output(unsigned int n, struct proc *p);
+
 // Fetch the uint64 at addr from the current process.
 int
 fetchaddr(uint64 addr, uint64 *ip)
@@ -101,6 +103,7 @@ extern uint64 sys_unlink(void);
 extern uint64 sys_link(void);
 extern uint64 sys_mkdir(void);
 extern uint64 sys_close(void);
+extern uint64 sys_trace(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -126,6 +129,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+[SYS_trace]   sys_trace,
 };
 
 void
@@ -139,9 +143,88 @@ syscall(void)
     // Use num to lookup the system call function for num, call it,
     // and store its return value in p->trapframe->a0
     p->trapframe->a0 = syscalls[num]();
+
+    // output the sys_trace
+    for(int i = 0; i < 32;i++){
+      if( ((p->trace_mask>>i)&0x1) && (num == i) ){
+        sys_trace_output(num , p);
+      }
+    }
   } else {
     printf("%d %s: unknown sys call %d\n",
             p->pid, p->name, num);
     p->trapframe->a0 = -1;
   }
+}
+
+
+void sys_trace_output(unsigned int n, struct proc *p){
+  //printf("sys_trace_output :%d \n",n);  //for debug
+switch (n)
+{
+case SYS_fork:
+  printf("syscall  fork->%d \n", p->pid);
+  break;
+case SYS_exit:
+printf("syscall  exit->%d \n",p->pid);
+  break;
+case SYS_wait:
+printf("syscall  wait->%d \n",p->pid);
+  break;
+case SYS_pipe:
+printf("syscall  pipe->%d \n",p->pid);
+  break;
+case SYS_read:
+printf("syscall  read->%d \n",p->pid);
+  break;
+case SYS_kill:
+printf("syscall  kill->%d \n",p->pid);
+  break;
+case SYS_exec:
+printf("syscall  exec->%d \n",p->pid);
+  break;
+case SYS_fstat:
+printf("syscall  fstat->%d \n",p->pid);
+  break;
+case SYS_chdir:
+printf("syscall  chdir->%d \n",p->pid);
+  break;
+case SYS_dup:
+printf("syscall  dup->%d \n",p->pid);
+  break;
+case SYS_sbrk:
+printf("syscall  sbrk->%d \n",p->pid);
+  break;
+case SYS_sleep:
+printf("syscall  sleep->%d \n",p->pid);
+  break;
+case SYS_uptime:
+printf("syscall  uptime->%d \n",p->pid);
+  break;
+case SYS_open:
+printf("syscall  open->%d \n",p->pid);
+  break;
+case SYS_write:
+printf("syscall  write->%d \n",p->pid);
+  break;
+case SYS_mknod:
+printf("syscall  mknod->%d \n",p->pid);
+  break;
+case SYS_unlink:
+printf("syscall  unlink->%d \n",p->pid);
+  break;
+case SYS_link:
+printf("syscall  link->%d \n",p->pid);
+  break;
+case SYS_mkdir:
+printf("syscall  mkdir->%d \n",p->pid);
+  break;
+case SYS_close:
+printf("syscall  close->%d \n",p->pid);
+  break;
+
+default:
+  break;
+}
+
 }

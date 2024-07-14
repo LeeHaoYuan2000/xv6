@@ -6,6 +6,8 @@
 #include "proc.h"
 #include "defs.h"
 
+int trace(unsigned int n);
+
 struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
@@ -298,6 +300,9 @@ fork(void)
 
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
+
+  // copy trace mask
+  np->trace_mask = p->trace_mask;
 
   // Cause fork to return 0 in the child.
   np->trapframe->a0 = 0;
@@ -680,4 +685,14 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+//set the trace mask
+int trace(unsigned int n){
+
+  struct  proc *p = myproc();
+
+  p->trace_mask = n;
+  
+  return 1; //set trace mask success
 }
