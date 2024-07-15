@@ -5,6 +5,9 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sysinfo.h"
+
+#include "syscall.h"
 
 uint64
 sys_exit(void)
@@ -96,4 +99,17 @@ uint64 sys_trace(void){
   argint(0, &n);
   printf("trace bit is %d\n", n);
   return trace(n);
+}
+
+//get the sys_info
+uint64 sys_info(void){
+  uint64 info_addr;
+
+argaddr(0, &info_addr);
+
+  if(info_addr < 0){
+    return -1;
+  }
+
+  return info(&info_addr);
 }

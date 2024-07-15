@@ -1,5 +1,6 @@
 
 int trace(unsigned int n);
+int info(uint64 *info_addr);
 // Saved registers for kernel context switches.
 struct context {
   uint64 ra;

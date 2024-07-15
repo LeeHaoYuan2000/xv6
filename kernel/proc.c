@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "sysinfo.h"
 
 int trace(unsigned int n);
 
@@ -695,4 +696,35 @@ int trace(unsigned int n){
   p->trace_mask = n;
   
   return 1; //set trace mask success
+}
+
+unsigned int nproc(void){
+
+
+  struct proc *p;
+  unsigned int sum = 0;
+  
+
+  for(p = proc; p < &proc[NPROC] ; p++){
+    if(p->state != UNUSED){
+      sum++;
+    }
+  }
+
+  return sum;
+}
+
+int info(uint64 *info_addr){
+
+  //struct proc *p = myproc();
+  struct sysinfo info_buf;
+
+  info_buf.freemem = kfreemem();
+  info_buf.nproc   = nproc();
+
+  if(copyout(myproc()->pagetable, *info_addr, (char *)&info_buf, sizeof(struct sysinfo)) < 0){
+    return -1;
+  }
+
+  return 0;
 }
