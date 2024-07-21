@@ -81,7 +81,7 @@ kalloc(void)
   return (void*)r;
 }
 
-unsigned int kfreemem(void){
+unsigned int kfreemem(void){ //-------add by Lee 20240718
   acquire(&kmem.lock); //
   unsigned int sum = 0;
   struct run *r = kmem.freelist;

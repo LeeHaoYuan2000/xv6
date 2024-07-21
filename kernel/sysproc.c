@@ -113,3 +113,24 @@ argaddr(0, &info_addr);
 
   return info(&info_addr);
 }
+
+int
+sys_pgaccess(void)
+{
+  // lab pgtbl: your code here.
+  uint64 start_va;
+  argaddr(0, &start_va);
+
+  int page_num;
+  argint(1, &page_num);
+
+  uint64 result_va;
+  argaddr(2, &result_va) ;
+
+
+  struct proc *p = myproc();
+  if(pgaccess(p->pagetable,start_va,page_num,result_va) < 0)
+    return -1;
+
+  return 0;
+}

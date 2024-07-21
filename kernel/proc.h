@@ -1,6 +1,3 @@
-
-int trace(unsigned int n);
-int info(uint64 *info_addr);
 // Saved registers for kernel context switches.
 struct context {
   uint64 ra;
@@ -82,6 +79,10 @@ struct trapframe {
   /* 280 */ uint64 t6;
 };
 
+struct usyscall{
+  int pid;
+};
+
 enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 // Per-process state
@@ -98,7 +99,7 @@ struct proc {
   // wait_lock must be held when using this:
   struct proc *parent;         // Parent process
 
-  //trace masks
+  //trace masks ------- add by Lee
   unsigned int trace_mask;
 
   // these are private to the process, so p->lock need not be held.
@@ -106,6 +107,10 @@ struct proc {
   uint64 sz;                   // Size of process memory (bytes)
   pagetable_t pagetable;       // User page table
   struct trapframe *trapframe; // data page for trampoline.S
+  
+  //USYSCALL get the pid from the user space
+  struct usyscall *usyscall;
+
   struct context context;      // swtch() here to run process
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory

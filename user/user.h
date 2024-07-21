@@ -25,6 +25,10 @@ int uptime(void);
 int trace(int);
 int info(uint64*);
 
+//USYSCALL
+int pgaccess(void *base, int len, void *mask);
+int ugetpid(void);
+
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);
