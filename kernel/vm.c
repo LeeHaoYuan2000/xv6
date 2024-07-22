@@ -465,3 +465,26 @@ int pgaccess(pagetable_t pagetable,uint64 start_va, int page_num, uint64 result_
   copyout(pagetable,result_va,(char*)&bitmask,sizeof(bitmask));
   return 0;
 }
+
+void vmprintf(pagetable_t pagetable, uint64 deepth){
+
+  if(deepth > 3){
+    return ;
+  }
+
+    // there are 2^9 = 512 PTEs in a page table.
+  for(int i = 0; i < 512; i++){
+    pte_t pte = pagetable[i];
+    if(pte & PTE_V){
+      // this PTE points to a lower-level page table.
+
+      uint64 child = PTE2PA(pte);
+      for(int n = 0; n< deepth ; n++){
+        printf(".. ");
+      }
+
+      printf("%d: pte %p pa %p \n",i , pte, child);
+      vmprintf((pagetable_t)child,deepth + 1);
+    } 
+  }
+}
