@@ -24,6 +24,8 @@ int sleep(int);
 int uptime(void);
 int trace(int);
 int info(uint64*);
+int sigalarm(int,void *);
+int sigreturn(void);
 
 //USYSCALL
 int pgaccess(void *base, int len, void *mask);
