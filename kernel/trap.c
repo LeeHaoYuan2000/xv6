@@ -78,7 +78,21 @@ usertrap(void)
 
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2){
-    printf("trap tiggered !! \n");
+
+    if(myproc()->alarm_time > 0){ // trap assignment start
+      myproc()->tick_count++;
+
+      if(myproc()->tick_count == myproc()->alarm_time){
+        myproc()->save_frame = (struct trapframe* )kalloc();
+        memmove(myproc()->save_frame , myproc()->trapframe, PGSIZE);
+        myproc()->interrupt_ra = myproc()->trapframe->epc;
+        
+        myproc()->trapframe->epc = myproc()->handler;
+
+        usertrapret();
+      }
+    }// trap assignment end
+
     yield();
   }
 

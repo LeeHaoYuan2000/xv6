@@ -39,3 +39,5 @@ entry("uptime");
 entry("trace");
 entry("info");
 entry("pgaccess");
+entry("sigalarm");
+entry("sigreturn");

@@ -136,3 +136,32 @@ sys_pgaccess(void)
 
   return 0;
 }
+
+uint64 sys_sigalarm(void){
+  int alarm_time;
+  uint64 handler;
+
+  argint(0, &alarm_time);
+  argaddr(1, &handler);
+
+  if(alarm_time < 0){
+    return -1;
+  }
+
+  struct proc *process = myproc();
+
+  process->alarm_time = alarm_time;
+  process->handler    = handler;
+
+  return 0;
+}
+
+uint64 sys_sigreturn(void){
+
+  myproc()->tick_count = 0;
+  memmove(myproc()->trapframe,myproc()->save_frame, PGSIZE);
+  myproc()->trapframe->epc = myproc()->interrupt_ra;
+
+  kfree(myproc()->save_frame);
+  return 0;
+}

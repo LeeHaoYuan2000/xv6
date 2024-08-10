@@ -142,6 +142,7 @@ UPROGS=\
 	$U/_pgtbltest\
 	$U/_call\
 	$U/_bttest\
+	$U/_alarmtest\
 
 
 fs.img: mkfs/mkfs README $(UPROGS)

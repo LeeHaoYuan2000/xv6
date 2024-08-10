@@ -107,6 +107,14 @@ struct proc {
   uint64 sz;                   // Size of process memory (bytes)
   pagetable_t pagetable;       // User page table
   struct trapframe *trapframe; // data page for trampoline.S
+
+  //for trap
+  int alarm_time;
+  int tick_count;
+  uint64 handler;
+  uint64 interrupt_ra;//store the return address after swtich to handler
+  struct trapframe *save_frame; //for save the register when switch back from the handler in trap.
+  
   
   //USYSCALL get the pid from the user space
   struct usyscall *usyscall;
