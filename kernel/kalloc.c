@@ -23,10 +23,23 @@ struct {
   struct run *freelist;
 } kmem;
 
+struct page_ref{
+  struct spinlock lock;
+  uint32 ref_count;
+}page_ref[(PHYSTOP - KERNBASE) / PGSIZE];
+
+
 void
 kinit()
 {
   initlock(&kmem.lock, "kmem");
+
+//COW: For init the spinlock of the page reference
+  for(int i = 0; i < (PHYSTOP - KERNBASE) / PGSIZE ; i++){//
+      initlock(&page_ref[i] , "page_ref");
+      page_ref[i].ref_count = 0;
+  }
+
   freerange(end, (void*)PHYSTOP);
 }
 
@@ -52,14 +65,30 @@ kfree(void *pa)
     panic("kfree");
 
   // Fill with junk to catch dangling refs.
-  memset(pa, 1, PGSIZE);
 
-  r = (struct run*)pa;
+  if(page_ref[(uint64)pa / PGSIZE].ref_count == 0 ){
+    panic("kfree: <cow> free the unused page");
+  }
 
-  acquire(&kmem.lock);
-  r->next = kmem.freelist;
-  kmem.freelist = r;
-  release(&kmem.lock);
+  acquire(&page_ref[(uint64)pa / PGSIZE].lock);
+
+  page_ref[(uint64)pa / PGSIZE].ref_count -= 1;
+
+  release(&page_ref[(uint64)pa / PGSIZE].lock);
+
+  if(page_ref[(uint64)pa / PGSIZE].ref_count > 0){
+   return;
+  }
+  else{
+    memset(pa, 1, PGSIZE);
+
+    r = (struct run*)pa;
+    acquire(&kmem.lock);
+    r->next = kmem.freelist;
+    kmem.freelist = r;
+    release(&kmem.lock);
+  }
+  
 }
 
 // Allocate one 4096-byte page of physical memory.
