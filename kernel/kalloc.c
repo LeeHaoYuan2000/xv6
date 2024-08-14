@@ -105,6 +105,16 @@ kalloc(void)
     kmem.freelist = r->next;
   release(&kmem.lock);
 
+  //COW
+  if((uint64)r % PGSIZE != 0){
+    panic("Kalloc: the free Kmem not align \n");
+  }
+
+  acquire(&page_ref[( (uint64)r - KERNBASE) / PGSIZE]);
+  page_ref[( (uint64)r - KERNBASE) / PGSIZE].ref_count = 1;
+  release(&page_ref[( (uint64)r - KERNBASE) / PGSIZE]);
+  //COW end
+
   if(r)
     memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
@@ -124,3 +134,43 @@ unsigned int kfreemem(void){ //-------add by Lee 20240718
 
   return sum*PGSIZE;  
 }
+
+
+
+// cow : page refrence operation
+uint32 get_page_ref_count(uint64 pa){
+
+  uint32 count = 0;
+  
+  acquire(&page_ref[(pa - KERNBASE) / PGSIZE]);
+
+  count = page_ref[(pa - KERNBASE) / PGSIZE].ref_count;
+
+  release(&page_ref[(pa - KERNBASE) / PGSIZE]);
+
+  return count;
+}
+
+void add_page_ref_count(uint64 pa){
+
+
+  acquire(&page_ref[(pa - KERNBASE) / PGSIZE]);
+
+  page_ref[(pa - KERNBASE) / PGSIZE].ref_count++;
+
+  release(&page_ref[(pa - KERNBASE) / PGSIZE]);
+
+}
+
+// void dec_page_red_count(uint64 pa){
+
+//   acquire(&page_ref[(pa - KERNBASE) / PGSIZE]);
+
+//   if(page_ref[(pa - KERNBASE) / PGSIZE].ref_count == 0){
+//     release(&page_ref[(pa - KERNBASE) / PGSIZE]);
+//   }
+//   else{
+//     page_ref[(pa - KERNBASE) / PGSIZE].ref_count--;
+//     release(&page_ref[(pa - KERNBASE) / PGSIZE]);
+//   }
+// }
