@@ -67,7 +67,40 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
-  } else {
+  }
+  //COW opration
+  else if(r_scause() == 13 || r_scause() == 15){ //value 13 for load access fault
+    uint64 va = r_stval();//get the virture address
+    if(check_cow(p->pagetable, va) == 0){ //check the cow valid bit
+      if(killed(p))
+      exit(-1);
+    }
+
+     va=PGROUNDDOWN(va);
+    pte_t *pte = walk(p->pagetable , va, 0);
+    uint64 cow_pa = PTE2PA(*pte);
+    if(get_page_ref_count(cow_pa) == 1){
+      *pte = *pte | PTE_W;
+      *pte = *pte & ~PTE_C;
+    }
+    else{
+      void *new_pa = kalloc();
+
+      if(new_pa == 0){
+          panic("COW new Page Fail \n");
+      }
+
+      memmove(new_pa , (void*) cow_pa , PGSIZE);
+
+      pte_t new_pte = PA2PTE(new_pa);
+      *pte = *pte | PTE_W;
+      *pte = *pte & ~PTE_C;
+
+      kfree((void*)cow_pa);
+    }
+
+  }
+   else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
     setkilled(p);

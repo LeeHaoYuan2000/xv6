@@ -315,15 +315,30 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
       panic("uvmcopy: pte should exist");
     if((*pte & PTE_V) == 0)
       panic("uvmcopy: page not present");
+
+    //For COW
+    if((*pte & PTE_W) != 0 ){// if the page is writable set PTE_W to 0
+        *pte =  (*pte & ~PTE_W); //because a lot of page will share one page
+        *pte =  (*pte | PTE_C);  //to demonstrate this is COW page
+    }
+
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
-    if((mem = kalloc()) == 0)
-      goto err;
-    memmove(mem, (char*)pa, PGSIZE);
-    if(mappages(new, i, PGSIZE, (uint64)mem, flags) != 0){
-      kfree(mem);
+
+    if(mappages(new, i, PGSIZE, (uint64)pa, flags) != 0){
       goto err;
     }
+
+    add_page_ref_count(pa); //add page refrence
+
+    // comment for COW
+    // if((mem = kalloc()) == 0)
+    //   goto err;
+    // memmove(mem, (char*)pa, PGSIZE);
+    // if(mappages(new, i, PGSIZE, (uint64)mem, flags) != 0){
+    //   kfree(mem);
+    //   goto err;
+    // }
   }
   return 0;
 
@@ -352,6 +367,32 @@ int
 copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 {
   uint64 n, va0, pa0;
+
+  if(check_cow(pagetable, dstva)){
+   pte_t* pte = walk(pagetable, dstva , 0);
+   uint64 cow_pa = PTE2PA(*pte);
+
+    if(get_page_ref_count(cow_pa) == 1){
+        *pte = *pte | PTE_W;
+        *pte = *pte & ~PTE_C;
+    }
+    else{
+      void *new_pa = kalloc();
+
+      if(new_pa == 0){
+          panic("COW new Page Fail \n");
+      }
+
+      memmove(new_pa , (void*) cow_pa , PGSIZE);
+
+      pte_t new_pte = PA2PTE(new_pa);
+      *pte = *pte | PTE_W;
+      *pte = *pte & ~PTE_C;
+
+      kfree((void*)cow_pa);
+    }
+
+  }
 
   while(len > 0){
     va0 = PGROUNDDOWN(dstva);
@@ -488,4 +529,26 @@ void vmprintf(pagetable_t pagetable, uint64 deepth){
       vmprintf((pagetable_t)child,deepth + 1);
     } 
   }
+}
+
+unsigned int check_cow(pagetable_t pagetable,uint64 va){
+  if(va > MAXVA){
+    return 0; // Kill the process
+  }
+
+  pte_t *pte = walk(pagetable, va, 0);
+
+  if(pte == 0){ // this is no such pte
+    return 0; //kill the process
+  }
+
+  if((*pte & PTE_V) == 0){ //there is no valid page 
+    return 0; //this page is not valid
+  }
+
+  if(*pte & PTE_C == 1){
+    return 1;  // Cow page, not to kill the process
+  }
+
+  return 0;
 }

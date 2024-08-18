@@ -64,6 +64,8 @@ void*           kalloc(void);
 void            kfree(void *);
 void            kinit(void);
 unsigned int    kfreemem(void);
+void add_page_ref_count(uint64 pa);
+uint32 get_page_ref_count(uint64 pa);
 
 // log.c
 void            initlog(int, struct superblock*);
